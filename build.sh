@@ -62,12 +62,12 @@ xcodebuild \
     DEVELOPMENT_TEAM="${TEAM_ID}" \
     clean build \
     -derivedDataPath "$OUTPUT_DIR/DerivedData" \
-    | xcpretty || true
+    | tee "$OUTPUT_DIR/build.log"
 
 # Find the built .app
-APP_PATH=$(find "$OUTPUT_DIR/DerivedData" -name "AppFileManager.app" -type d | head -1)
+APP_PATH=$(find "$OUTPUT_DIR/DerivedData" -name "AppFileManager.app" -type d 2>/dev/null | head -1)
 
-if [ -z "$APP_PATH" ]; then
+if [ -z "${APP_PATH:-}" ]; then
     echo "ERROR: Could not find AppFileManager.app in build output"
     exit 1
 fi
