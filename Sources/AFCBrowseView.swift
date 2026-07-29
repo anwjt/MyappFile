@@ -110,11 +110,10 @@ struct AFCBrowseView: View {
     private func loadDirectory() {
         isLoading = true
         DispatchQueue.global(qos: .userInitiated).async {
-            var error: NSError?
-            let entries = JITEnableContext.shared.afcListDir(self.afcPath, error: &error)
-            
+            let entries = (try? JITEnableContext.shared.afcListDir(self.afcPath)) ?? []
+
             var results: [DirectoryEntry] = []
-            if let entries = entries {
+            if !entries.isEmpty {
                 let filtered = entries.filter { $0 != "." && $0 != ".." }
                 for entry in filtered {
                     let fullPath = self.currentAfcPath(for: entry)
@@ -142,12 +141,11 @@ struct AFCBrowseView: View {
         let localPath = docDir.appendingPathComponent(entry.name).path
         
         DispatchQueue.global(qos: .userInitiated).async {
-            var error: NSError?
-            let success = JITEnableContext.shared.afcPullFile(fullPath, toLocalPath: localPath, error: &error)
-            
+            let success = (try? JITEnableContext.shared.afcPullFile(fullPath, toLocalPath: localPath)) ?? false
+
             DispatchQueue.main.async {
                 if !success {
-                    self.errorMessage = error?.localizedDescription ?? "Failed to download"
+                    self.errorMessage = "Failed to download"
                     self.showError = true
                 } else {
                     let alert = UIAlertController(
@@ -175,14 +173,13 @@ struct AFCBrowseView: View {
         
         alert.addAction(UIAlertAction(title: "Delete", style: .destructive) { _ in
             DispatchQueue.global(qos: .userInitiated).async {
-                var error: NSError?
-                let success = JITEnableContext.shared.afcDelete(fullPath, error: &error)
-                
+                let success = (try? JITEnableContext.shared.afcDelete(fullPath)) ?? false
+
                 DispatchQueue.main.async {
                     if success {
                         self.loadDirectory()
                     } else {
-                        self.errorMessage = error?.localizedDescription ?? "Failed to delete"
+                        self.errorMessage = "Failed to delete"
                         self.showError = true
                     }
                 }
@@ -250,8 +247,7 @@ struct AFCFilePreviewView: View {
             isImage = true
             // Download image data for preview
             let tempPath = FileManager.default.temporaryDirectory.appendingPathComponent(fileName).path
-            var error: NSError?
-            let success = JITEnableContext.shared.afcPullFile(path, toLocalPath: tempPath, error: &error)
+            let success = (try? JITEnableContext.shared.afcPullFile(path, toLocalPath: tempPath)) ?? false
             if success {
                 imageData = FileManager.default.contents(atPath: tempPath)
                 try? FileManager.default.removeItem(atPath: tempPath)
@@ -261,10 +257,9 @@ struct AFCFilePreviewView: View {
             let textExts = ["plist", "json", "xml", "txt", "log", "md", "cfg", "conf", "ini"]
             if textExts.contains(ext) {
                 let tempPath = FileManager.default.temporaryDirectory.appendingPathComponent(fileName).path
-                var error: NSError?
-                let success = JITEnableContext.shared.afcPullFile(path, toLocalPath: tempPath, error: &error)
+                let success = (try? JITEnableContext.shared.afcPullFile(path, toLocalPath: tempPath)) ?? false
                 if success {
-                    content = String(contentsOfFile: tempPath, encoding: .utf8)
+                    content = try? String(contentsOfFile: tempPath, encoding: .utf8)
                     try? FileManager.default.removeItem(atPath: tempPath)
                 }
             }

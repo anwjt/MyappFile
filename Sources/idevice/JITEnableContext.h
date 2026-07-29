@@ -11,6 +11,8 @@
 #include "heartbeat.h"
 #include "mount.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 typedef void (^HeartbeatCompletionHandler)(int result, NSString *message);
 typedef void (^LogFuncC)(const char* message, ...);
 typedef void (^LogFunc)(NSString *message);
@@ -32,13 +34,18 @@ typedef void (^SyslogErrorHandler)(NSError *error);
     // ideviceInfo
     @protected LockdowndClientHandle *   g_client;
 }
-@property (class, readonly)JITEnableContext* shared;
-- (IdevicePairingFile*)getPairingFileWithError:(NSError**)error;
-- (IdeviceProviderHandle*)getTcpProviderHandle NS_SWIFT_NAME(tcpProviderHandle);
-- (BOOL)ensureHeartbeatWithError:(NSError**)err;
-- (BOOL)startHeartbeat:(NSError**)err;
+@property (class, readonly) JITEnableContext* shared;
+
+// Expose TCP provider handle as a class property for Swift
+@property (class, nonatomic, readonly) IdeviceProviderHandle * _Nullable tcpProviderHandle;
+
+- (IdevicePairingFile * _Nullable)getPairingFileWithError:(NSError * _Nullable * _Nullable)error;
+- (BOOL)ensureHeartbeatWithError:(NSError * _Nullable * _Nullable)err;
+- (BOOL)startHeartbeat:(NSError * _Nullable * _Nullable)err;
 
 @end
+
+NS_ASSUME_NONNULL_END
 
 @interface JITEnableContext(JIT)
 - (BOOL)debugAppWithBundleID:(NSString*)bundleID logger:(LogFunc)logger jsCallback:(DebugAppCallback)jsCallback;

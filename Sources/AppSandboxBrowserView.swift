@@ -283,9 +283,8 @@ struct AppSandboxBrowserView: View {
     func connectAfcClient() {
         isLoading = true
         DispatchQueue.global(qos: .userInitiated).async {
-            var error: NSError?
-            let client = JITEnableContext.shared.houseArrestConnect(forBundleId: bundleId, command: command, error: &error)
-            
+            let client = try? JITEnableContext.shared.houseArrestConnect(forBundleId: bundleId, command: command)
+
             DispatchQueue.main.async {
                 if let client = client {
                     self.afcClient = client
@@ -293,7 +292,7 @@ struct AppSandboxBrowserView: View {
                     self.loadDirectory()
                 } else {
                     self.isLoading = false
-                    self.errorMessage = error?.localizedDescription ?? "Failed to connect to app sandbox"
+                    self.errorMessage = "Failed to connect to app sandbox"
                     self.showError = true
                 }
             }
@@ -315,7 +314,7 @@ struct AppSandboxBrowserView: View {
             }
             
             var error: NSError?
-            let entries = JITEnableContext.shared.houseArrestListDir(client, path: self.currentPath, error: &error)
+            let entries = (try? JITEnableContext.shared.houseArrestListDir(client, path: self.currentPath)) ?? []
             
             var results: [DirectoryEntry] = []
             
@@ -326,7 +325,7 @@ struct AppSandboxBrowserView: View {
                     let fullPath = self.currentPath == "/" ? "/\(entry)" : self.currentPath + "/" + entry
                     var size: UInt64 = 0
                     var isDir = false
-                    JITEnableContext.shared.houseArrestGetFileInfo(client, path: fullPath, size: &size, isDir: &isDir, error: nil)
+                    _ = try? JITEnableContext.shared.houseArrestGetFileInfo(client, path: fullPath, size: &size, isDir: &isDir, error: nil)
                     entryInfos.append((entry, isDir, size))
                 }
                 
@@ -344,8 +343,8 @@ struct AppSandboxBrowserView: View {
             DispatchQueue.main.async {
                 self.items = results
                 self.isLoading = false
-                if error != nil && results.isEmpty {
-                    self.errorMessage = error?.localizedDescription
+                if results.isEmpty {
+                    self.errorMessage = "Failed to list directory or directory is empty"
                     self.showError = true
                 }
             }
@@ -363,13 +362,11 @@ struct AppSandboxBrowserView: View {
         DispatchQueue.global(qos: .userInitiated).async {
             guard let client = self.afcClient else { return }
             
-            var error: NSError?
-            let success = JITEnableContext.shared.houseArrestPullFile(
+            let success = (try? JITEnableContext.shared.houseArrestPullFile(
                 client,
                 fromDevicePath: fullPath,
-                toLocalPath: localPath,
-                error: &error
-            )
+                toLocalPath: localPath
+            )) ?? false
             
             DispatchQueue.main.async {
                 self.isLoading = false
@@ -404,8 +401,7 @@ struct AppSandboxBrowserView: View {
         alert.addAction(UIAlertAction(title: "Delete", style: .destructive) { _ in
             DispatchQueue.global(qos: .userInitiated).async {
                 guard let client = self.afcClient else { return }
-                var error: NSError?
-                let success = JITEnableContext.shared.houseArrestDelete(client, path: fullPath, error: &error)
+                let success = (try? JITEnableContext.shared.houseArrestDelete(client, path: fullPath)) ?? false
                 
                 DispatchQueue.main.async {
                     if success {
@@ -465,13 +461,11 @@ struct AppSandboxBrowserView: View {
         isLoading = true
         DispatchQueue.global(qos: .userInitiated).async {
             guard let client = self.afcClient else { return }
-            var error: NSError?
-            let success = JITEnableContext.shared.houseArrestPushFile(
+            let success = (try? JITEnableContext.shared.houseArrestPushFile(
                 client,
                 fromLocalPath: tempFile.path,
-                toDevicePath: devicePath,
-                error: &error
-            )
+                toDevicePath: devicePath
+            )) ?? false
             
             try? FileManager.default.removeItem(at: tempFile)
             
@@ -493,12 +487,10 @@ struct AppSandboxBrowserView: View {
         
         DispatchQueue.global(qos: .userInitiated).async {
             guard let client = self.afcClient else { return }
-            var error: NSError?
-            let success = JITEnableContext.shared.houseArrestMakeDirectory(
+            let success = (try? JITEnableContext.shared.houseArrestMakeDirectory(
                 client,
-                path: fullPath,
-                error: &error
-            )
+                path: fullPath
+            )) ?? false
             
             DispatchQueue.main.async {
                 self.newFolderName = ""

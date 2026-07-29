@@ -147,42 +147,38 @@ struct AppSandboxBrowserEntryView: View {
     private func loadApps() {
         isLoading = true
         DispatchQueue.global(qos: .userInitiated).async {
-            var error: NSError?
-            let appsDict = JITEnableContext.shared.getAllAppsInfoWithError(&error)
-            
+            let appsDictAny = (try? JITEnableContext.shared.getAllAppsInfoWithError()) as? [String: Any] ?? [:]
+
             var results: [AppInfo] = []
-            
-            if let dict = appsDict {
-                for (bundleId, appInfo) in dict {
-                    guard let info = appInfo as? [String: Any] else { continue }
-                    
-                    let name = info["CFBundleDisplayName"] as? String
-                            ?? info["CFBundleName"] as? String
-                            ?? bundleId
-                    let isSystem = (info["ApplicationType"] as? String) == "System"
-                    
-                    // Get icon
-                    var iconError: NSError?
-                    let icon = JITEnableContext.shared.getAppIcon(withBundleId: bundleId, error: &iconError)
-                    var iconData: Data? = nil
-                    if let uiImage = icon {
-                        iconData = uiImage.pngData()
-                    }
-                    
-                    results.append(AppInfo(
-                        id: bundleId,
-                        bundleId: bundleId,
-                        name: name,
-                        iconData: iconData,
-                        isSystem: isSystem
-                    ))
+
+            for (bundleId, appInfo) in appsDictAny {
+                guard let info = appInfo as? [String: Any] else { continue }
+
+                let name = info["CFBundleDisplayName"] as? String
+                        ?? info["CFBundleName"] as? String
+                        ?? bundleId
+                let isSystem = (info["ApplicationType"] as? String) == "System"
+
+                // Get icon
+                let icon = try? JITEnableContext.shared.getAppIcon(withBundleId: bundleId)
+                var iconData: Data? = nil
+                if let uiImage = icon {
+                    iconData = uiImage.pngData()
                 }
-                
-                // Sort: user apps first, then system apps; within each group sort by name
-                results.sort {
-                    if $0.isSystem != $1.isSystem { return !$0.isSystem }
-                    return $0.name < $1.name
-                }
+
+                results.append(AppInfo(
+                    id: bundleId,
+                    bundleId: bundleId,
+                    name: name,
+                    iconData: iconData,
+                    isSystem: isSystem
+                ))
+            }
+
+            // Sort: user apps first, then system apps; within each group sort by name
+            results.sort {
+                if $0.isSystem != $1.isSystem { return !$0.isSystem }
+                return $0.name < $1.name
             }
             
             DispatchQueue.main.async {

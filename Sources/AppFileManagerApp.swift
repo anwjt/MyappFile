@@ -191,17 +191,16 @@ class AppFileManagerViewModel: ObservableObject {
     func startHeartbeat() {
         connectionStatus = "Starting heartbeat..."
         DispatchQueue.global(qos: .userInitiated).async {
-            var error: NSError?
-            let success = JITEnableContext.shared.startHeartbeat(&error)
-            
+            let success = (try? JITEnableContext.shared.startHeartbeat()) ?? false
+
             DispatchQueue.main.async {
-                if success || error == nil {
+                if success {
                     self.isConnected = true
                     self.connectionStatus = "Connected! Heartbeat active."
                     self.loadDeviceInfo()
                 } else {
                     self.isConnected = false
-                    self.connectionStatus = "Failed: \(error?.localizedDescription ?? "Unknown error")"
+                    self.connectionStatus = "Failed to start heartbeat"
                 }
             }
         }
@@ -219,26 +218,24 @@ class AppFileManagerViewModel: ObservableObject {
     func loadDeviceInfo() {
         DispatchQueue.global(qos: .userInitiated).async {
             // Use ideviceInfoInit to get lockdown client, then parse XML for device info
-            var error: NSError?
-            let lockdownClient = JITEnableContext.shared.ideviceInfoInit(&error)
-            
+            let lockdownClient = try? JITEnableContext.shared.ideviceInfoInit()
+
             if let lockdownClient = lockdownClient {
                 // Get all values as XML plist
-                var xmlError: NSError?
-                let xml = JITEnableContext.shared.ideviceInfoGetXML(withLockdownClient: lockdownClient, error: &xmlError)
-                
-                if let xml = xml {
+                let xmlPtr = try? JITEnableContext.shared.ideviceInfoGetXML(withLockdownClient: lockdownClient)
+
+                if let xml = xmlPtr {
                     let xmlString = String(cString: xml)
                     free(xml)
-                    
+
                     // Parse XML to extract device info
                     self.parseDeviceInfo(from: xmlString)
                 }
-                
+
                 lockdownd_client_free(lockdownClient)
             } else {
                 DispatchQueue.main.async {
-                    self.connectionStatus = "Failed to get device info: \(error?.localizedDescription ?? "Unknown")"
+                    self.connectionStatus = "Failed to get device info"
                 }
             }
         }
