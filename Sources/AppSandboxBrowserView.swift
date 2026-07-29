@@ -283,7 +283,7 @@ struct AppSandboxBrowserView: View {
     func connectAfcClient() {
         isLoading = true
         DispatchQueue.global(qos: .userInitiated).async {
-            let client = try? JITEnableContext.shared.houseArrestConnect(forBundleId: bundleId, command: command)
+            let client = JITEnableContext.shared.houseArrestConnectForBundleId(bundleId, command: command, error: nil)
 
             DispatchQueue.main.async {
                 if let client = client {
@@ -314,7 +314,7 @@ struct AppSandboxBrowserView: View {
             }
             
             var error: NSError?
-            let entries = (try? JITEnableContext.shared.houseArrestListDir(client, path: self.currentPath)) ?? []
+            let entries = JITEnableContext.shared.houseArrestListDir(client, path: self.currentPath, error: nil) ?? []
             
             var results: [DirectoryEntry] = []
             
@@ -325,7 +325,7 @@ struct AppSandboxBrowserView: View {
                     let fullPath = self.currentPath == "/" ? "/\(entry)" : self.currentPath + "/" + entry
                     var size: UInt64 = 0
                     var isDir = false
-                    _ = try? JITEnableContext.shared.houseArrestGetFileInfo(client, path: fullPath, size: &size, isDir: &isDir, error: nil)
+                    _ = JITEnableContext.shared.houseArrestGetFileInfo(client, path: fullPath, size: &size, isDir: &isDir, error: nil)
                     entryInfos.append((entry, isDir, size))
                 }
                 
@@ -362,11 +362,12 @@ struct AppSandboxBrowserView: View {
         DispatchQueue.global(qos: .userInitiated).async {
             guard let client = self.afcClient else { return }
             
-            let success = (try? JITEnableContext.shared.houseArrestPullFile(
+            let success = JITEnableContext.shared.houseArrestPullFile(
                 client,
                 fromDevicePath: fullPath,
-                toLocalPath: localPath
-            )) ?? false
+                toLocalPath: localPath,
+                error: nil
+            )
             
             DispatchQueue.main.async {
                 self.isLoading = false
@@ -401,7 +402,7 @@ struct AppSandboxBrowserView: View {
         alert.addAction(UIAlertAction(title: "Delete", style: .destructive) { _ in
             DispatchQueue.global(qos: .userInitiated).async {
                 guard let client = self.afcClient else { return }
-                let success = (try? JITEnableContext.shared.houseArrestDelete(client, path: fullPath)) ?? false
+                let success = JITEnableContext.shared.houseArrestDelete(client, path: fullPath, error: nil)
                 
                 DispatchQueue.main.async {
                     if success {
@@ -447,8 +448,8 @@ struct AppSandboxBrowserView: View {
         }
     }
     
-    func handleFileImport(_ result: Result<[URL], Error>) {
-        guard let urls = try? result.get(), let url = urls.first else { return }
+    func handleFileImport(_ result: Result<URL, Error>) {
+        guard let url = try? result.get() else { return }
         
         // Copy to temp location first (importing sandbox)
         let tempDir = FileManager.default.temporaryDirectory
@@ -461,11 +462,12 @@ struct AppSandboxBrowserView: View {
         isLoading = true
         DispatchQueue.global(qos: .userInitiated).async {
             guard let client = self.afcClient else { return }
-            let success = (try? JITEnableContext.shared.houseArrestPushFile(
+            let success = JITEnableContext.shared.houseArrestPushFile(
                 client,
                 fromLocalPath: tempFile.path,
-                toDevicePath: devicePath
-            )) ?? false
+                toDevicePath: devicePath,
+                error: nil
+            )
             
             try? FileManager.default.removeItem(at: tempFile)
             
@@ -487,10 +489,11 @@ struct AppSandboxBrowserView: View {
         
         DispatchQueue.global(qos: .userInitiated).async {
             guard let client = self.afcClient else { return }
-            let success = (try? JITEnableContext.shared.houseArrestMakeDirectory(
+            let success = JITEnableContext.shared.houseArrestMakeDirectory(
                 client,
-                path: fullPath
-            )) ?? false
+                path: fullPath,
+                error: nil
+            )
             
             DispatchQueue.main.async {
                 self.newFolderName = ""

@@ -110,7 +110,7 @@ struct AFCBrowseView: View {
     private func loadDirectory() {
         isLoading = true
         DispatchQueue.global(qos: .userInitiated).async {
-            let entries = (try? JITEnableContext.shared.afcListDir(self.afcPath)) ?? []
+            let entries = JITEnableContext.shared.afcListDir(self.afcPath, error: nil) ?? []
 
             var results: [DirectoryEntry] = []
             if !entries.isEmpty {
@@ -141,7 +141,7 @@ struct AFCBrowseView: View {
         let localPath = docDir.appendingPathComponent(entry.name).path
         
         DispatchQueue.global(qos: .userInitiated).async {
-            let success = (try? JITEnableContext.shared.afcPullFile(fullPath, toLocalPath: localPath)) ?? false
+            let success = JITEnableContext.shared.afcPullFile(fullPath, toLocalPath: localPath, error: nil)
 
             DispatchQueue.main.async {
                 if !success {
@@ -173,7 +173,7 @@ struct AFCBrowseView: View {
         
         alert.addAction(UIAlertAction(title: "Delete", style: .destructive) { _ in
             DispatchQueue.global(qos: .userInitiated).async {
-                let success = (try? JITEnableContext.shared.afcDelete(fullPath)) ?? false
+                let success = JITEnableContext.shared.afcDelete(fullPath, error: nil)
 
                 DispatchQueue.main.async {
                     if success {
@@ -247,7 +247,7 @@ struct AFCFilePreviewView: View {
             isImage = true
             // Download image data for preview
             let tempPath = FileManager.default.temporaryDirectory.appendingPathComponent(fileName).path
-            let success = (try? JITEnableContext.shared.afcPullFile(path, toLocalPath: tempPath)) ?? false
+            let success = JITEnableContext.shared.afcPullFile(path, toLocalPath: tempPath, error: nil)
             if success {
                 imageData = FileManager.default.contents(atPath: tempPath)
                 try? FileManager.default.removeItem(atPath: tempPath)
@@ -257,7 +257,7 @@ struct AFCFilePreviewView: View {
             let textExts = ["plist", "json", "xml", "txt", "log", "md", "cfg", "conf", "ini"]
             if textExts.contains(ext) {
                 let tempPath = FileManager.default.temporaryDirectory.appendingPathComponent(fileName).path
-                let success = (try? JITEnableContext.shared.afcPullFile(path, toLocalPath: tempPath)) ?? false
+                let success = JITEnableContext.shared.afcPullFile(path, toLocalPath: tempPath, error: nil)
                 if success {
                     content = try? String(contentsOfFile: tempPath, encoding: .utf8)
                     try? FileManager.default.removeItem(atPath: tempPath)

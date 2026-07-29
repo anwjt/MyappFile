@@ -175,7 +175,7 @@ class AppFileManagerViewModel: ObservableObject {
     
     func checkConnection() {
         DispatchQueue.global(qos: .userInitiated).async {
-            let hasProvider = JITEnableContext.shared.tcpProviderHandle != nil
+            let hasProvider = JITEnableContext.shared.getTcpProviderHandle() != nil
             DispatchQueue.main.async {
                 self.isConnected = hasProvider
                 if hasProvider {
@@ -191,7 +191,7 @@ class AppFileManagerViewModel: ObservableObject {
     func startHeartbeat() {
         connectionStatus = "Starting heartbeat..."
         DispatchQueue.global(qos: .userInitiated).async {
-            let success = (try? JITEnableContext.shared.startHeartbeat()) ?? false
+            let success = JITEnableContext.shared.startHeartbeat(nil)
 
             DispatchQueue.main.async {
                 if success {
@@ -208,7 +208,7 @@ class AppFileManagerViewModel: ObservableObject {
     
     func stopHeartbeat() {
         // Free provider to stop heartbeat
-        if let provider = JITEnableContext.shared.tcpProviderHandle {
+        if let provider = JITEnableContext.shared.getTcpProviderHandle() {
             idevice_provider_free(provider)
         }
         isConnected = false
@@ -218,11 +218,11 @@ class AppFileManagerViewModel: ObservableObject {
     func loadDeviceInfo() {
         DispatchQueue.global(qos: .userInitiated).async {
             // Use ideviceInfoInit to get lockdown client, then parse XML for device info
-            let lockdownClient = try? JITEnableContext.shared.ideviceInfoInit()
+            let lockdownClient = JITEnableContext.shared.ideviceInfoInit(nil)
 
             if let lockdownClient = lockdownClient {
                 // Get all values as XML plist
-                let xmlPtr = try? JITEnableContext.shared.ideviceInfoGetXML(withLockdownClient: lockdownClient)
+                let xmlPtr = JITEnableContext.shared.ideviceInfoGetXMLWithLockdownClient(lockdownClient, error: nil)
 
                 if let xml = xmlPtr {
                     let xmlString = String(cString: xml)

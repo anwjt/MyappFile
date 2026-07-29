@@ -147,7 +147,7 @@ struct AppSandboxBrowserEntryView: View {
     private func loadApps() {
         isLoading = true
         DispatchQueue.global(qos: .userInitiated).async {
-            let appsDictAny = (try? JITEnableContext.shared.getAllAppsInfoWithError()) as? [String: Any] ?? [:]
+            let appsDictAny = JITEnableContext.shared.getAllAppsInfoWithError(nil) as? [String: Any] ?? [:]
 
             var results: [AppInfo] = []
 
@@ -160,7 +160,7 @@ struct AppSandboxBrowserEntryView: View {
                 let isSystem = (info["ApplicationType"] as? String) == "System"
 
                 // Get icon
-                let icon = try? JITEnableContext.shared.getAppIcon(withBundleId: bundleId)
+                let icon = JITEnableContext.shared.getAppIconWithBundleId(bundleId, error: nil)
                 var iconData: Data? = nil
                 if let uiImage = icon {
                     iconData = uiImage.pngData()
