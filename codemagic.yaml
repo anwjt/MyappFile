@@ -1,0 +1,53 @@
+workflows:
+  build-ipa:
+    name: Build IPA
+    environment:
+      xcode: latest
+      vars:
+        XCODE_PROJECT: "AppFileManager.xcodeproj"
+        XCODE_SCHEME: "AppFileManager"
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: "main"
+    scripts:
+      - name: Build
+        script: |
+          xcodebuild build \
+            -project "$XCODE_PROJECT" \
+            -scheme "$XCODE_SCHEME" \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_ENTITLEMENTS="" \
+            ENABLE_BITCODE=NO \
+            | tee build.log
+
+      - name: Create IPA
+        script: |
+          APP_PATH=$(find build -name "AppFileManager.app" -type d | head -1)
+          if [ -z "$APP_PATH" ]; then
+            echo "ERROR: AppFileManager.app not found!"
+            exit 1
+          fi
+
+          rm -rf Payload packages
+          mkdir -p Payload packages
+          cp -R "$APP_PATH" Payload/AppFileManager.app
+          cd Payload
+          zip -r ../packages/AppFileManager.ipa AppFileManager.app
+          cd ..
+          rm -rf Payload
+
+          echo "=== IPA size ==="
+          ls -lh packages/
+
+      - name: Upload IPA
+        script: |
+          # Codemagic publishes artifacts automatically
+          cp packages/AppFileManager.ipa $CM_BUILD_DIR/
+
+    artifacts:
+      - packages/*.ipa
