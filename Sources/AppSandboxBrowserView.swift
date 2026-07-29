@@ -22,7 +22,7 @@ struct AppSandboxBrowserView: View {
     @State private var showPushPicker = false
     @State private var showNewFolderAlert = false
     @State private var newFolderName = ""
-    @State private var afcClient: AfcClientHandle?
+    @State private var afcClient: UnsafeMutableRawPointer?
     @State private var showFileActionSheet = false
     @State private var selectedFileEntry: DirectoryEntry?
     @State private var showRenameAlert = false
@@ -447,8 +447,8 @@ struct AppSandboxBrowserView: View {
         }
     }
     
-    func handleFileImport(_ result: Result<URL, Error>) {
-        guard let url = try? result.get() else { return }
+    func handleFileImport(_ result: Result<[URL], Error>) {
+        guard let urls = try? result.get(), let url = urls.first else { return }
         
         // Copy to temp location first (importing sandbox)
         let tempDir = FileManager.default.temporaryDirectory

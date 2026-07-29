@@ -36,12 +36,13 @@ typedef void (^SyslogErrorHandler)(NSError *error);
 }
 @property (class, readonly) JITEnableContext* shared;
 
-// Expose TCP provider handle as a class property for Swift
-@property (class, nonatomic, readonly) IdeviceProviderHandle * _Nullable tcpProviderHandle;
+// Expose TCP provider handle as an instance property (getter provided in .m)
+@property (nonatomic, readonly, getter=getTcpProviderHandle) IdeviceProviderHandle * _Nullable tcpProviderHandle;
 
 - (IdevicePairingFile * _Nullable)getPairingFileWithError:(NSError * _Nullable * _Nullable)error;
 - (BOOL)ensureHeartbeatWithError:(NSError * _Nullable * _Nullable)err;
 - (BOOL)startHeartbeat:(NSError * _Nullable * _Nullable)err;
+
 
 @end
 
@@ -54,27 +55,27 @@ NS_ASSUME_NONNULL_END
 @end
 
 @interface JITEnableContext(DDI)
-- (NSUInteger)getMountedDeviceCount:(NSError**)error __attribute__((swift_error(zero_result)));
-- (NSInteger)mountPersonalDDIWithImagePath:(NSString*)imagePath trustcachePath:(NSString*)trustcachePath manifestPath:(NSString*)manifestPath error:(NSError**)error __attribute__((swift_error(nonzero_result)));
+ - (NSUInteger)getMountedDeviceCount:(NSError * _Nullable * _Nullable)error __attribute__((swift_error(zero_result)));
+ - (NSInteger)mountPersonalDDIWithImagePath:(NSString*)imagePath trustcachePath:(NSString*)trustcachePath manifestPath:(NSString*)manifestPath error:(NSError * _Nullable * _Nullable)error __attribute__((swift_error(nonzero_result)));
 @end
 
 @interface JITEnableContext(Profile)
-- (NSArray<NSData*>*)fetchAllProfiles:(NSError **)error;
-- (BOOL)removeProfileWithUUID:(NSString*)uuid error:(NSError **)error;
-- (BOOL)addProfile:(NSData*)profile error:(NSError **)error;
+ - (NSArray<NSData*>*)fetchAllProfiles:(NSError * _Nullable * _Nullable)error;
+ - (BOOL)removeProfileWithUUID:(NSString*)uuid error:(NSError * _Nullable * _Nullable)error;
+ - (BOOL)addProfile:(NSData*)profile error:(NSError * _Nullable * _Nullable)error;
 @end
 
 @interface JITEnableContext(Process)
-- (NSArray<NSDictionary*>*)fetchProcessListWithError:(NSError**)error;
-- (BOOL)killProcessWithPID:(int)pid signal:(int)signal error:(NSError **)error;
+ - (NSArray<NSDictionary*>*)fetchProcessListWithError:(NSError * _Nullable * _Nullable)error;
+ - (BOOL)killProcessWithPID:(int)pid signal:(int)signal error:(NSError * _Nullable * _Nullable)error;
 @end
 
 @interface JITEnableContext(App)
-- (UIImage*)getAppIconWithBundleId:(NSString*)bundleId error:(NSError**)error;
-- (NSDictionary<NSString*, NSString*>*)getAppListWithError:(NSError**)error;
-- (NSDictionary<NSString*, NSString*>*)getAllAppsWithError:(NSError**)error;
-- (NSDictionary<NSString*, NSString*>*)getHiddenSystemAppsWithError:(NSError**)error;
-- (NSDictionary<NSString*, id>*)getAllAppsInfoWithError:(NSError**)error;
+ - (UIImage*)getAppIconWithBundleId:(NSString*)bundleId error:(NSError * _Nullable * _Nullable)error;
+ - (NSDictionary<NSString*, NSString*>*)getAppListWithError:(NSError * _Nullable * _Nullable)error;
+ - (NSDictionary<NSString*, NSString*>*)getAllAppsWithError:(NSError * _Nullable * _Nullable)error;
+ - (NSDictionary<NSString*, NSString*>*)getHiddenSystemAppsWithError:(NSError * _Nullable * _Nullable)error;
+ - (NSDictionary<NSString*, id>*)getAllAppsInfoWithError:(NSError * _Nullable * _Nullable)error;
 @end
 
 @interface JITEnableContext(Syslog)
@@ -84,14 +85,14 @@ NS_ASSUME_NONNULL_END
 @end
 
 @interface JITEnableContext(DeviceInfo)
-- (LockdowndClientHandle*)ideviceInfoInit:(NSError**)error;
-- (char*)ideviceInfoGetXMLWithLockdownClient:(LockdowndClientHandle*)lockdownClient error:(NSError**)error;
+ - (LockdowndClientHandle*)ideviceInfoInit:(NSError * _Nullable * _Nullable)error;
+ - (char * _Nullable)ideviceInfoGetXMLWithLockdownClient:(LockdowndClientHandle*)lockdownClient error:(NSError * _Nullable * _Nullable)error;
 @end
 
 @interface JITEnableContext(AFC)
-- (BOOL)afcIsPathDirectory:(NSString *)path;
-- (NSArray<NSString *> *)afcListDir:(NSString *)path error:(NSError **)error;
-- (BOOL)afcPushFile:(NSString *)sourcePath toPath:(NSString *)destPath error:(NSError **)error;
-- (BOOL)afcPullFile:(NSString *)devicePath toLocalPath:(NSString *)localPath error:(NSError **)error;
-- (BOOL)afcDelete:(NSString *)path error:(NSError **)error;
+ - (BOOL)afcIsPathDirectory:(NSString *)path;
+ - (NSArray<NSString *> *)afcListDir:(NSString *)path error:(NSError * _Nullable * _Nullable)error;
+ - (BOOL)afcPushFile:(NSString *)sourcePath toPath:(NSString *)destPath error:(NSError * _Nullable * _Nullable)error;
+ - (BOOL)afcPullFile:(NSString *)devicePath toLocalPath:(NSString *)localPath error:(NSError * _Nullable * _Nullable)error;
+ - (BOOL)afcDelete:(NSString *)path error:(NSError * _Nullable * _Nullable)error;
 @end

@@ -30,49 +30,49 @@ typedef NS_ENUM(NSInteger, HouseArrestCommand) {
 /// @param bundleId The bundle identifier of the target app
 /// @param command Whether to access the full container or just Documents
 /// @param outError On failure, contains error description
-/// @return AfcClientHandle on success, NULL on failure
-- (AfcClientHandle *)houseArrestConnectForBundleId:(NSString *)bundleId
-                                         command:(HouseArrestCommand)command
-                                           error:(NSError **)outError;
+/// @return AFC client opaque pointer on success, NULL on failure
+- (void *)houseArrestConnectForBundleId:(NSString *)bundleId
+                                                                                 command:(HouseArrestCommand)command
+                                                                                     error:(NSError * _Nullable * _Nullable)outError;
 
 /// List files in a directory within the app's sandbox via HouseArrest
 /// @param client The AFC client handle obtained from houseArrestConnect
 /// @param path Path relative to the sandbox root
-- (NSArray<NSString *> *)houseArrestListDir:(AfcClientHandle *)client
+ - (NSArray<NSString *> *)houseArrestListDir:(void *)client
                                        path:(NSString *)path
-                                      error:(NSError **)error;
+                                      error:(NSError * _Nullable * _Nullable)error;
 
 /// Check if a path is a directory
-- (BOOL)houseArrestIsPathDirectory:(AfcClientHandle *)client
+ - (BOOL)houseArrestIsPathDirectory:(void *)client
                               path:(NSString *)path;
 
 /// Get file info (size, type, etc.)
-- (BOOL)houseArrestGetFileInfo:(AfcClientHandle *)client
+ - (BOOL)houseArrestGetFileInfo:(void *)client
                           path:(NSString *)path
                           size:(uint64_t *)outSize
                          isDir:(BOOL *)outIsDir
-                         error:(NSError **)outError;
+                         error:(NSError * _Nullable * _Nullable)outError;
 
 /// Pull (download) a file from the app sandbox to local storage
-- (BOOL)houseArrestPullFile:(AfcClientHandle *)client
+ - (BOOL)houseArrestPullFile:(void *)client
                fromDevicePath:(NSString *)devicePath
                     toLocalPath:(NSString *)localPath
-                        error:(NSError **)error;
+                        error:(NSError * _Nullable * _Nullable)error;
 
 /// Push (upload) a file from local storage to the app sandbox
-- (BOOL)houseArrestPushFile:(AfcClientHandle *)client
+ - (BOOL)houseArrestPushFile:(void *)client
                fromLocalPath:(NSString *)localPath
               toDevicePath:(NSString *)devicePath
-                     error:(NSError **)error;
+            error:(NSError * _Nullable * _Nullable)error;
 
 /// Delete a file or directory in the app sandbox (recursive)
-- (BOOL)houseArrestDelete:(AfcClientHandle *)client
-                     path:(NSString *)path
-                    error:(NSError **)error;
+ - (BOOL)houseArrestDelete:(void *)client
+                      path:(NSString *)path
+                     error:(NSError * _Nullable * _Nullable)error;
 
 /// Create a directory in the app sandbox
-- (BOOL)houseArrestMakeDirectory:(AfcClientHandle *)client
+ - (BOOL)houseArrestMakeDirectory:(void *)client
                             path:(NSString *)path
-                           error:(NSError **)error;
+                           error:(NSError * _Nullable * _Nullable)error;
 
 @end

@@ -63,10 +63,10 @@ static ssize_t recvAll(int fd, void *buf, size_t len) {
 
 @implementation JITEnableContext(HouseArrest)
 
-// Connect to HouseArrest service and return an AFC client scoped to the app container
-- (AfcClientHandle *)houseArrestConnectForBundleId:(NSString *)bundleId
-                                         command:(HouseArrestCommand)command
-                                           error:(NSError **)outError {
+// Connect to HouseArrest service and return an opaque AFC client pointer scoped to the app container
+- (void *)houseArrestConnectForBundleId:(NSString *)bundleId
+                                                                                 command:(HouseArrestCommand)command
+                                                                                     error:(NSError * _Nullable * _Nullable)outError {
     if (!provider) {
         if (outError) {
             *outError = [self errorWithStr:@"Provider not initialized! Start heartbeat first." code:-1];
@@ -228,13 +228,13 @@ static ssize_t recvAll(int fd, void *buf, size_t len) {
     }
     
     NSLog(@"HouseArrest + AFC connection successful for bundle: %@, port: %d", bundleId, port);
-    return afcClient;
+    return (void*)afcClient;
 }
 
 // List directory contents
-- (NSArray<NSString *> *)houseArrestListDir:(AfcClientHandle *)client
+ - (NSArray<NSString *> *)houseArrestListDir:(void *)client
                                        path:(NSString *)path
-                                      error:(NSError **)outError {
+                                      error:(NSError * _Nullable * _Nullable)outError {
     if (!client) {
         if (outError) *outError = [self errorWithStr:@"Invalid AFC client!" code:-1];
         return nil;
@@ -242,7 +242,7 @@ static ssize_t recvAll(int fd, void *buf, size_t len) {
     
     char **entries = NULL;
     size_t count = 0;
-    IdeviceFfiError *err = afc_list_directory(client, path.fileSystemRepresentation, &entries, &count);
+    IdeviceFfiError *err = afc_list_directory((struct AfcClientHandle *)client, path.fileSystemRepresentation, &entries, &count);
     if (err) {
         if (outError) *outError = [self errorWithStr:[NSString stringWithFormat:@"Failed to list directory: %s", err->message ?: "unknown"] code:err->code];
         idevice_error_free(err);
@@ -261,13 +261,13 @@ static ssize_t recvAll(int fd, void *buf, size_t len) {
 }
 
 // Check if path is directory
-- (BOOL)houseArrestIsPathDirectory:(AfcClientHandle *)client
+- (BOOL)houseArrestIsPathDirectory:(void *)client
                               path:(NSString *)path {
     if (!client) return NO;
     
     struct AfcFileInfo info;
     memset(&info, 0, sizeof(info));
-    IdeviceFfiError *err = afc_get_file_info(client, path.fileSystemRepresentation, &info);
+    IdeviceFfiError *err = afc_get_file_info((struct AfcClientHandle *)client, path.fileSystemRepresentation, &info);
     if (err) {
         idevice_error_free(err);
         return NO;
@@ -278,12 +278,11 @@ static ssize_t recvAll(int fd, void *buf, size_t len) {
     return isDir;
 }
 
-// Get file info
-- (BOOL)houseArrestGetFileInfo:(AfcClientHandle *)client
+ - (BOOL)houseArrestGetFileInfo:(void *)client
                           path:(NSString *)path
                           size:(uint64_t *)outSize
                          isDir:(BOOL *)outIsDir
-                         error:(NSError **)outError {
+                         error:(NSError * _Nullable * _Nullable)outError {
     if (!client) {
         if (outError) *outError = [self errorWithStr:@"Invalid AFC client!" code:-1];
         return NO;
@@ -291,7 +290,7 @@ static ssize_t recvAll(int fd, void *buf, size_t len) {
     
     struct AfcFileInfo info;
     memset(&info, 0, sizeof(info));
-    IdeviceFfiError *err = afc_get_file_info(client, path.fileSystemRepresentation, &info);
+    IdeviceFfiError *err = afc_get_file_info((struct AfcClientHandle *)client, path.fileSystemRepresentation, &info);
     if (err) {
         if (outError) *outError = [self errorWithStr:[NSString stringWithFormat:@"Failed to get file info: %s", err->message ?: "unknown"] code:err->code];
         idevice_error_free(err);
@@ -305,17 +304,17 @@ static ssize_t recvAll(int fd, void *buf, size_t len) {
 }
 
 // Pull file from device to local storage
-- (BOOL)houseArrestPullFile:(AfcClientHandle *)client
+- (BOOL)houseArrestPullFile:(void *)client
                fromDevicePath:(NSString *)devicePath
                     toLocalPath:(NSString *)localPath
-                        error:(NSError **)outError {
+                        error:(NSError * _Nullable * _Nullable)outError {
     if (!client) {
         if (outError) *outError = [self errorWithStr:@"Invalid AFC client!" code:-1];
         return NO;
     }
     
     struct AfcFileHandle *handle = NULL;
-    IdeviceFfiError *err = afc_file_open(client, devicePath.fileSystemRepresentation, AfcRdOnly, &handle);
+    IdeviceFfiError *err = afc_file_open((struct AfcClientHandle *)client, devicePath.fileSystemRepresentation, AfcRdOnly, &handle);
     if (err) {
         if (outError) *outError = [self errorWithStr:[NSString stringWithFormat:@"Failed to open device file: %s", err->message ?: "unknown"] code:err->code];
         idevice_error_free(err);
@@ -347,10 +346,10 @@ static ssize_t recvAll(int fd, void *buf, size_t len) {
 }
 
 // Push file from local storage to device
-- (BOOL)houseArrestPushFile:(AfcClientHandle *)client
+- (BOOL)houseArrestPushFile:(void *)client
                fromLocalPath:(NSString *)localPath
               toDevicePath:(NSString *)devicePath
-                     error:(NSError **)outError {
+                     error:(NSError * _Nullable * _Nullable)outError {
     if (!client) {
         if (outError) *outError = [self errorWithStr:@"Invalid AFC client!" code:-1];
         return NO;
@@ -363,7 +362,7 @@ static ssize_t recvAll(int fd, void *buf, size_t len) {
     }
     
     struct AfcFileHandle *handle = NULL;
-    IdeviceFfiError *err = afc_file_open(client, devicePath.fileSystemRepresentation, AfcWrOnly, &handle);
+    IdeviceFfiError *err = afc_file_open((struct AfcClientHandle *)client, devicePath.fileSystemRepresentation, AfcWrOnly, &handle);
     if (err) {
         if (outError) *outError = [self errorWithStr:[NSString stringWithFormat:@"Failed to open device file for writing: %s", err->message ?: "unknown"] code:err->code];
         idevice_error_free(err);
@@ -392,15 +391,15 @@ static ssize_t recvAll(int fd, void *buf, size_t len) {
 }
 
 // Delete file or directory (recursive)
-- (BOOL)houseArrestDelete:(AfcClientHandle *)client
+- (BOOL)houseArrestDelete:(void *)client
                      path:(NSString *)path
-                    error:(NSError **)outError {
+                    error:(NSError * _Nullable * _Nullable)outError {
     if (!client) {
         if (outError) *outError = [self errorWithStr:@"Invalid AFC client!" code:-1];
         return NO;
     }
     
-    IdeviceFfiError *err = afc_remove_path_and_contents(client, path.fileSystemRepresentation);
+    IdeviceFfiError *err = afc_remove_path_and_contents((struct AfcClientHandle *)client, path.fileSystemRepresentation);
     if (err) {
         if (outError) *outError = [self errorWithStr:[NSString stringWithFormat:@"Failed to delete: %s", err->message ?: "unknown"] code:err->code];
         idevice_error_free(err);
@@ -410,15 +409,15 @@ static ssize_t recvAll(int fd, void *buf, size_t len) {
 }
 
 // Create directory
-- (BOOL)houseArrestMakeDirectory:(AfcClientHandle *)client
+- (BOOL)houseArrestMakeDirectory:(void *)client
                             path:(NSString *)path
-                           error:(NSError **)outError {
+                           error:(NSError * _Nullable * _Nullable)outError {
     if (!client) {
         if (outError) *outError = [self errorWithStr:@"Invalid AFC client!" code:-1];
         return NO;
     }
     
-    IdeviceFfiError *err = afc_make_directory(client, path.fileSystemRepresentation);
+    IdeviceFfiError *err = afc_make_directory((struct AfcClientHandle *)client, path.fileSystemRepresentation);
     if (err) {
         if (outError) *outError = [self errorWithStr:[NSString stringWithFormat:@"Failed to create directory: %s", err->message ?: "unknown"] code:err->code];
         idevice_error_free(err);
